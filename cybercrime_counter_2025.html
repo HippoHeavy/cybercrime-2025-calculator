@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2025 Cybercrime Cost Counter</title>
+  <meta name="description" content="A real‑time counter estimating cybercrime costs for 2025, reaching $10.5T by year end." />
+  <style>
+    :root {
+      --bg1: #0f172a; /* slate-900 */
+      --bg2: #111827; /* gray-900 */
+      --fg:  #e5e7eb; /* gray-200 */
+      --accent:#60a5fa; /* blue-400 */
+      --muted:#94a3b8; /* slate-400 */
+      --glass: rgba(255,255,255,0.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 600px at 70% 20%, #1f2937 0%, transparent 60%),
+                  linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      display: grid; place-items: center;
+    }
+    .wrap {
+      width: min(1100px, 92vw);
+      padding: 2rem 1.25rem 3rem;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; margin-bottom: 1.25rem;
+    }
+    h1 {
+      font-size: clamp(1.4rem, 2.2vw, 2rem);
+      font-weight: 700; letter-spacing: 0.2px; margin: 0;
+    }
+    .badge {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: var(--glass);
+      padding: 0.35rem 0.6rem; border-radius: 999px; font-size: 0.8rem; color: var(--muted);
+      backdrop-filter: blur(6px);
+    }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: clamp(1rem, 4vw, 2rem);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    .counter {
+      display: grid; gap: 0.5rem; align-items: start; justify-items: center; text-align: center;
+    }
+    .big {
+      /* Large, tabular figures to prevent jank as numbers change */
+      font-variant-numeric: tabular-nums lining-nums;
+      font-feature-settings: "tnum" 1, "lnum" 1;
+      font-weight: 800;
+      font-size: clamp(2rem, 7vw, 5rem);
+      line-height: 1.05;
+      letter-spacing: 0.5px;
+      margin: 0.25rem 0 0.5rem;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+    .subtitle { color: var(--muted); font-size: clamp(0.95rem, 1.6vw, 1.05rem); }
+
+    .progress {
+      width: 100%; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; margin-top: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .bar { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #60a5fa, #818cf8); transition: width 0.8s cubic-bezier(.2,.7,.2,1);
+      box-shadow: 0 0 16px rgba(96,165,250,0.35);
+    }
+
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; justify-content: center; }
+    .row .chip { font-size: 0.9rem; color: var(--muted); }
+
+    footer { margin-top: 1.25rem; color: var(--muted); font-size: 0.85rem; text-align: center; }
+    a { color: #93c5fd; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>2025 Cybercrime Cost Counter</h1>
+      <div class="badge" id="asof">Initializing…</div>
+    </header>
+
+    <section class="panel counter" aria-live="polite">
+      <div id="amount" class="big" aria-label="Estimated 2025 cybercrime cost so far">$0</div>
+      <div class="subtitle">of <strong>$10.5 trillion</strong> projected for all of 2025</div>
+
+      <div class="progress" aria-hidden="true"><div id="bar" class="bar"></div></div>
+      <div class="row">
+        <div class="chip">Year progress: <span id="pct">0%</span></div>
+        <div class="chip">Per second: <span id="rate">$0</span></div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Counter is linear across the 2025 calendar year and updates in real time. Timings use <abbr title="Coordinated Universal Time">UTC</abbr> to avoid time‑zone & DST drift.</p>
+    </footer>
+  </div>
+
+  <script>
+    // ====== Configuration ======
+    const YEAR_TOTAL = 10_500_000_000_000; // $10.5T
+    // Use UTC boundaries for consistency across visitors
+    const START_MS = Date.UTC(2025, 0, 1, 0, 0, 0, 0); // 2025-01-01T00:00:00Z
+    const END_MS   = Date.UTC(2026, 0, 1, 0, 0, 0, 0); // 2026-01-01T00:00:00Z
+    const DURATION_MS = END_MS - START_MS; // total ms in 2025
+
+    // Derived rate (dollars per millisecond)
+    const RATE_PER_MS = YEAR_TOTAL / DURATION_MS;
+
+    // DOM refs
+    const amountEl = document.getElementById('amount');
+    const pctEl    = document.getElementById('pct');
+    const rateEl   = document.getElementById('rate');
+    const barEl    = document.getElementById('bar');
+    const asofEl   = document.getElementById('asof');
+
+    const fmtUSD0 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    const fmtPct  = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 2 });
+    const fmtTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
+
+    // Seed current amount from wall clock at load time
+    function clamp01(x){ return Math.min(1, Math.max(0, x)); }
+    function progressNow(){
+      const now = Date.now();
+      return clamp01((now - START_MS) / DURATION_MS);
+    }
+
+    let progress = progressNow();
+    let currentAmount = Math.round(YEAR_TOTAL * progress);
+
+    // Ensure we never overshoot total
+    function setAmountDisplay(val){ amountEl.textContent = fmtUSD0.format(val); }
+
+    // Update static labels
+    rateEl.textContent = fmtUSD0.format(Math.round(RATE_PER_MS * 1000)); // show per second
+    function updateProgressUI(p){
+      pctEl.textContent = fmtPct.format(p);
+      barEl.style.width = (p * 100).toFixed(3) + '%';
+    }
+    updateProgressUI(progress);
+    setAmountDisplay(currentAmount);
+    asofEl.textContent = 'As of ' + fmtTime.format(new Date());
+
+    // Animate forward in real time
+    let lastTs = performance.now();
+
+    function frame(nowTs){
+      const dt = nowTs - lastTs; // milliseconds since last frame
+      lastTs = nowTs;
+
+      // Advance amount linearly by elapsed real time
+      currentAmount += RATE_PER_MS * dt;
+
+      // Recompute progress based on START+elapsed to keep bar in sync
+      const projectedNow = START_MS + (currentAmount / YEAR_TOTAL) * DURATION_MS;
+      const p = clamp01((projectedNow - START_MS) / DURATION_MS);
+
+      // Clamp if we reached end of year
+      if (projectedNow >= END_MS) {
+        currentAmount = YEAR_TOTAL;
+      }
+
+      // Only touch the DOM if the integer dollars changed (smooth but efficient)
+      const shown = Number(amountEl.textContent.replace(/[^0-9]/g, ''));
+      const nextInt = Math.min(YEAR_TOTAL, Math.floor(currentAmount));
+      if (nextInt !== shown) setAmountDisplay(nextInt);
+
+      updateProgressUI(clamp01((Date.now() - START_MS) / DURATION_MS));
+
+      if (currentAmount < YEAR_TOTAL) {
+        requestAnimationFrame(frame);
+      } else {
+        // Final state
+        setAmountDisplay(YEAR_TOTAL);
+        updateProgressUI(1);
+        asofEl.textContent = 'Completed — 2025-12-31 23:59:59.999 UTC';
+      }
+    }
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
