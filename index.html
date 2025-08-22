@@ -153,10 +153,10 @@
 
     const templates = [
       {subject:"person", label:"was just phished for", range:[100,500], tone:"warn"},
-      {subject:"person", label:"was hit with ransomware for", range:[1000,10000], tone:"bad"},
-      {subject:"business", label:"fell for a BEC scam costing", range:[5000,75000], tone:"bad"},
-      {subject:"business", label:"paid a fake invoice of", range:[2000,15000], tone:"warn"},
-      {subject:"business", label:"is recovering from downtime losses of", range:[10000,125000], tone:"bad"}
+      {subject:"person", label:"was hit with ransomware for", range:[1000,100000], tone:"bad"},
+      {subject:"business", label:"fell for a BEC scam costing", range:[5000,125000], tone:"bad"},
+      {subject:"business", label:"paid a fake invoice of", range:[2000,40000], tone:"warn"},
+      {subject:"business", label:"is recovering from downtime losses of", range:[10000,500000], tone:"bad"}
     ];
 
     const toastsEl = document.getElementById('toasts');
