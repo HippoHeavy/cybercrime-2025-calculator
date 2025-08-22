@@ -269,5 +269,18 @@
     toggleEl.addEventListener('click', togglePopups);
     toggleEl.addEventListener('keydown', (e)=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); togglePopups(); }});
   </script>
+  <script>
+    // Minimal fallback to surface errors & ensure badge updates even if main script fails early
+    window.addEventListener('error', function(e){
+      var el = document.getElementById('asof');
+      if (el) el.textContent = 'Error: ' + (e && e.message ? e.message : 'Script error');
+    });
+    window.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById('asof');
+      if (el && el.textContent.includes('Initializing')) {
+        try { el.textContent = 'As of ' + new Date().toLocaleString(); } catch(_){}
+      }
+    });
+  </script>
 </body>
 </html>
